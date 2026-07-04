@@ -4,13 +4,55 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
-import { chatWithCV } from "../chatFn";
+import * as cvData from "../data/cv";
 
 type Message = {
   role: "user" | "model";
   text: string;
   isTyping?: boolean;
 };
+
+function generateLocalResponse(message: string): string {
+  const msg = message.toLowerCase();
+  
+  if (msg.includes("أبحاث") || msg.includes("بحث") || msg.includes("مقالات") || msg.includes("نشر")) {
+    return `لديها ${cvData.publications.length} بحثاً منشوراً. من أهمها:\n` + 
+      cvData.publications.slice(0, 3).map(p => `- ${p.title}`).join("\n");
+  }
+  
+  if (msg.includes("مؤلفات") || msg.includes("كتب") || msg.includes("كتاب") || msg.includes("مؤلف")) {
+    return `لديها ${cvData.books.length} مؤلفاً وكتاباً. من أهمها:\n` + 
+      cvData.books.slice(0, 3).map(b => `- ${b.title}`).join("\n");
+  }
+  
+  if (msg.includes("مؤهل") || msg.includes("تعليم") || msg.includes("شهادات") || msg.includes("دكتوراه") || msg.includes("ماجستير") || msg.includes("بكالوريوس")) {
+    return `المؤهلات العلمية:\n` + 
+      cvData.education.map(e => `- ${e.degree} في ${e.specialization} (${e.year})`).join("\n");
+  }
+  
+  if (msg.includes("وظيفة") || msg.includes("عمل") || msg.includes("مناصب") || msg.includes("إداري") || msg.includes("عميد") || msg.includes("خبرات") || msg.includes("الوظيفة")) {
+    return `الوظيفة الحالية: ${cvData.personal.role}.\nمن أهم المناصب الإدارية:\n` + 
+      cvData.administrative.slice(0, 3).map(a => `- ${a}`).join("\n");
+  }
+
+  if (msg.includes("إشراف") || msg.includes("رسائل") || msg.includes("ماجستير") || msg.includes("دكتوراه")) {
+    return `أشرفت على العديد من الرسائل العلمية، منها ${cvData.supervision.masters} رسالة ماجستير و ${cvData.supervision.phd} رسالة دكتوراه.`;
+  }
+
+  if (msg.includes("اسم") || msg.includes("من هي") || msg.includes("زينب") || msg.includes("سيرة")) {
+    return `${cvData.personal.name}، ${cvData.personal.role}. ولدت في ${cvData.personal.birth}. الحالة الاجتماعية: ${cvData.personal.status}.`;
+  }
+
+  if (msg.includes("مؤتمرات") || msg.includes("مؤتمر")) {
+    return `شاركت في ${cvData.conferences.length} مؤتمراً وندوة علمية.`;
+  }
+
+  if (msg.includes("تدريب") || msg.includes("دورات")) {
+    return `لديها العديد من الخبرات التدريبية، منها الدورة التدريبية بجامعة جورجيا بالولايات المتحدة الأمريكية، بالإضافة إلى اجتياز ${cvData.training.length} برنامجاً تدريبياً.`;
+  }
+
+  return "عذراً، لم أفهم سؤالك جيداً. يمكنك سؤالي عن: الأبحاث، المؤلفات، المؤهلات العلمية، المناصب الإدارية، أو الإشراف على الرسائل.";
+}
 
 function TypingEffect({ text, onComplete }: { text: string; onComplete?: () => void }) {
   const [displayedText, setDisplayedText] = useState("");
@@ -31,7 +73,7 @@ function TypingEffect({ text, onComplete }: { text: string; onComplete?: () => v
     return () => clearInterval(interval);
   }, [text, onComplete]);
 
-  return <>{displayedText}</>;
+  return <span style={{ whiteSpace: "pre-line" }}>{displayedText}</span>;
 }
 
 export function Chatbot() {
@@ -61,24 +103,12 @@ export function Chatbot() {
     setHistory((prev) => [...prev, { role: "user", text: userMsg }]);
     setIsLoading(true);
 
-    try {
-      const response = await chatWithCV({ 
-        data: { 
-          message: userMsg, 
-          history: history.slice(1).map(h => ({ role: h.role, text: h.text })) // exclude the initial greeting and extra props
-        } 
-      });
-
-      if (response.success && response.text) {
-        setHistory((prev) => [...prev, { role: "model", text: response.text, isTyping: true }]);
-      } else {
-        setHistory((prev) => [...prev, { role: "model", text: response.text || "حدث خطأ ما.", isTyping: true }]);
-      }
-    } catch (error) {
-      setHistory((prev) => [...prev, { role: "model", text: "عذراً، حدث خطأ في الاتصال. يرجى المحاولة لاحقاً.", isTyping: true }]);
-    } finally {
+    // Simulate network delay for realism
+    setTimeout(() => {
+      const responseText = generateLocalResponse(userMsg);
+      setHistory((prev) => [...prev, { role: "model", text: responseText, isTyping: true }]);
       setIsLoading(false);
-    }
+    }, 500);
   };
 
   const handleTypingComplete = (index: number) => {
@@ -123,7 +153,7 @@ export function Chatbot() {
                 {history.map((msg, index) => (
                   <div
                     key={index}
-                    className={`flex ${
+                    className={`flex animate-in fade-in slide-in-from-bottom-2 duration-300 ${
                       msg.role === "user" ? "justify-end" : "justify-start"
                     }`}
                   >
