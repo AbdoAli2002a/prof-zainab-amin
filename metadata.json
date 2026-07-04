@@ -1,0 +1,8 @@
+{
+  "name": "Dr. Zainab CV",
+  "description": "Portfolio and CV for Prof. Dr. Zainab Mohamed Amin Khalil with a smart AI Chatbot.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
